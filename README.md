@@ -8,6 +8,15 @@ LLM local especializada em diagnosticar problemas de arquitetura de dados e reco
 
 ---
 
+## Abrir a demonstração em Windows (duplo clique)
+
+Para inspecionar a interface sem GPU, use **`INICIAR_DEMO_WINDOWS.bat`** na raiz do projeto
+(apenas Python 3 e internet para instalar Streamlit na primeira execução).
+O cenário já vem preenchido: clique em **Analisar arquitetura**.
+Esse modo é **ilustrativo, baseado em regras**, e **não substitui o treinamento de LLM**.
+Para avaliação rápida, leia também **`LEIA_PRIMEIRO.txt`**.
+
+Repositório publicado: https://github.com/MachadONLY/big-data-architecture-copilotcp2
 
 ## Verificação rápida sem GPU (interface e código)
 

@@ -1,0 +1,36 @@
+FIAP — CP2/CP3 — BIG DATA ARCHITECTURE COPILOT
+Turma: 4ESPV-2026 | Prof.: Francisco Elanio Bezerra
+GitHub: https://github.com/MachadONLY/big-data-architecture-copilotcp2
+
+GUIA RAPIDO PARA AVALIACAO
+
+1. Leia README.md para arquitetura, modelo Qwen3, dataset, metodologia e limitações.
+2. No Windows com Python 3 instalado, dê duplo clique em INICIAR_DEMO_WINDOWS.bat.
+   O script instala somente Streamlit (exige internet na primeira vez) e abre a interface.
+3. O campo já contém um cenário de exemplo. Clique em 'Analisar arquitetura'.
+4. Sem adapter treinado, o diagnóstico exibido é uma DEMONSTRACAO ILUSTRATIVA POR REGRAS.
+   Isso NÃO é inferência da LLM e NÃO comprova treinamento CUDA.
+5. Para validar os dados sem GPU:
+   python src/validate_dataset.py
+   python src/qa_static.py
+6. Para treinar de fato na NVIDIA/CUDA, consulte QUICKSTART.md e docs/training.md.
+
+ARQUIVOS PRINCIPAIS
+- src/train.py: QLoRA e SFT com PyTorch/PEFT/TRL
+- configs/experiment_0{1,2,3}.yaml: três experimentos
+- src/evaluate.py: avaliação Base versus Fine-tuned
+- data/processed/: train/validation/test
+- app/app.py: interface Streamlit
+- RELATORIO_ACADEMICO.md: relatório e metodologia
+- VERIFICACAO_FINAL.md: QA e limitações
+
+ESTADO DA ENTREGA
+Código, dataset, documentação e GitHub estão publicados. A execução do treinamento
+em CUDA, métricas reais de LLM e print da GPU continuam pendentes.
+Não foram inventados resultados. O grupo informado possui 3 integrantes, embora
+o enunciado especifique 4 ou 5 pessoas.
+
+INTEGRANTES
+Camila do Prado Padalino — RM98316
+Gabriel Teixeira Machado — RM551570
+Felipe Cavalcante Bressane — RM97688

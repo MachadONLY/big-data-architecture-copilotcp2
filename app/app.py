@@ -159,6 +159,11 @@ with col1:
     scenario = st.text_area(
         "Cenário de arquitetura",
         label_visibility="collapsed",
+        value=(
+            "Temos oito serviços produtores e doze consumidores conectados ponto a ponto. "
+            "Adicionar um novo consumidor exige alterar vários sistemas e não conseguimos "
+            "reprocessar eventos históricos de forma consistente."
+        ),
         placeholder=(
             "Ex.: Temos oito serviços produtores e doze consumidores conectados diretamente. "
             "Adicionar um consumidor exige alterar vários produtores e hoje não conseguimos "
