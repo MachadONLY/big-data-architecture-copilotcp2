@@ -79,7 +79,7 @@ A hipótese será testada em um benchmark fixo não utilizado no treinamento, ap
 | Benchmark real | **Pendente de adapter treinado** |
 | Screenshots CUDA | **Pendentes de execução na máquina** |
 | Screenshot do frontend | **Pendente de demo real com adapter** |
-| GitHub | **Pendente de commit e push na conta do grupo** |
+| GitHub | **Publicado em [MachadONLY/big-data-architecture-copilotcp2](https://github.com/MachadONLY/big-data-architecture-copilotcp2)** |
 
 Nenhum resultado de treinamento foi inventado.
 
