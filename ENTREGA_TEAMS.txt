@@ -1,0 +1,28 @@
+FIAP - 4ESPV-2026 - CP2/CP3 - Generative AI for Engineering
+Professor: Francisco Elanio Bezerra
+Projeto: Big Data Architecture Copilot
+
+INTEGRANTES CONFIRMADOS
+Camila do Prado Padalino - RM98316
+Gabriel Teixeira Machado - RM551570
+Felipe Cavalcante Bressane - RM97688
+
+ARQUIVO DE ENTREGA
+Anexar o ZIP do projeto completo (diretório com README.md, codigo, dataset e documentacao).
+O enunciado fornecido NAO pede especificamente um arquivo .txt ou PDF: ele pede documentacao e codigo NO GITHUB, alem da prova de GPU no VSCode.
+
+LINK DO GITHUB: [PREENCHER APOS PUBLICAR; NAO INFORMAR LINK INEXISTENTE]
+
+RESUMO
+Foi implementado um pipeline local de supervised fine-tuning (SFT) com QLoRA/NF4 para Qwen3 Base, dataset de 400 casos em 20 categorias (280/60/60), tres configuracoes experimentais, avaliacao Base vs Fine-tuned, verificadores de CUDA e frontend Streamlit. O repositorio inclui codigo, testes, instrucoes de reproducao, relatorio tecnico e criterios de QA.
+
+SITUACAO EFETIVAMENTE COMPROVADA
+A validacao do dataset, os testes offline e a verificacao estrutural foram realizados. O treino em CUDA, as metricas do fine-tuning, o adapter treinado, o screenshot da GPU e a publicacao no GitHub permanecem NAO COMPROVADOS. O frontend inclui um modo ilustrativo de regras, explicitamente separado da inferencia com LLM.
+
+IMPORTANTE
+O professor especificou grupos de 4 ou 5 pessoas. Foram informados somente 3 integrantes.
+
+PASTA/ARQUIVO QUE O PROFESSOR DEVE ABRIR PRIMEIRO: README.md
+RESUMO TECNICO: RELATORIO_ACADEMICO.md
+TESTES: python -m pytest -q / python src/qa_static.py / python src/validate_dataset.py
+DEMONSTRACAO: python -m streamlit run app/app.py (apos instalar streamlit)

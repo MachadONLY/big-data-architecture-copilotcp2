@@ -1,0 +1,1120 @@
+{
+  "version": 1,
+  "seed": 20261001,
+  "categories": {
+    "kafka_event_streaming": {
+      "title": "Kafka / event streaming",
+      "bottleneck": "Acoplamento entre produtores e consumidores ou incapacidade de distribuir eventos com escala e replay.",
+      "pattern": "Event streaming com log distribuído e consumidores desacoplados.",
+      "root": "O fluxo atual trata eventos como integrações síncronas ou ponto a ponto, criando dependência temporal e operacional entre sistemas.",
+      "solution": "Introduzir um backbone de eventos com tópicos bem definidos, particionamento orientado à chave e grupos de consumidores independentes.",
+      "techs": [
+        "Apache Kafka",
+        "Redpanda",
+        "Schema Registry",
+        "Kafka Connect"
+      ],
+      "advantages": [
+        "desacoplamento",
+        "escalabilidade horizontal",
+        "replay",
+        "múltiplos consumidores independentes"
+      ],
+      "tradeoffs": [
+        "operação de cluster",
+        "governança de schemas",
+        "observabilidade de lag",
+        "semântica de entrega"
+      ],
+      "b_terms": [
+        "acoplamento",
+        "ponto a ponto",
+        "fan-out"
+      ],
+      "p_terms": [
+        "event streaming",
+        "kafka",
+        "log distribuído"
+      ],
+      "must": [
+        "desacoplamento",
+        "producer",
+        "consumer",
+        "replay"
+      ],
+      "forbidden": [
+        "kafka garante exactly once fim a fim automaticamente"
+      ],
+      "stems": [
+        "Os produtores publicam eventos diretamente em APIs específicas de cada consumidor, e cada novo consumidor exige mudanças nos produtores.",
+        "Picos de eventos fazem serviços produtores aguardarem consumidores lentos e aumentam a latência de ponta a ponta.",
+        "Auditoria exige reprocessar eventos antigos, mas o barramento atual remove mensagens logo após o consumo.",
+        "Novos times querem consumir o mesmo fluxo de eventos sem coordenar deploy com os sistemas que produzem os dados."
+      ]
+    },
+    "batch_vs_streaming": {
+      "title": "Batch vs streaming",
+      "bottleneck": "Latência de dados incompatível com a necessidade do negócio ou uso de streaming onde processamento em lote seria suficiente.",
+      "pattern": "Escolha explícita entre processamento batch, streaming ou arquitetura híbrida conforme SLA de frescor.",
+      "root": "A frequência de processamento não foi alinhada ao SLA de decisão, ao custo operacional e à natureza dos dados.",
+      "solution": "Classificar workloads por SLA e adotar streaming apenas para fluxos que realmente exigem baixa latência, mantendo batch para consolidações tolerantes a atraso.",
+      "techs": [
+        "Apache Spark",
+        "Spark Structured Streaming",
+        "Apache Flink",
+        "Kafka",
+        "Airflow"
+      ],
+      "advantages": [
+        "SLA coerente",
+        "controle de custo",
+        "pipelines mais simples",
+        "baixa latência onde necessária"
+      ],
+      "tradeoffs": [
+        "duas modalidades operacionais",
+        "estado em streaming",
+        "complexidade de exactly-once",
+        "custo de infraestrutura contínua"
+      ],
+      "b_terms": [
+        "latência",
+        "batch",
+        "streaming"
+      ],
+      "p_terms": [
+        "batch",
+        "streaming",
+        "híbrida"
+      ],
+      "must": [
+        "latência",
+        "SLA",
+        "batch",
+        "streaming"
+      ],
+      "forbidden": [
+        "streaming é sempre melhor que batch"
+      ],
+      "stems": [
+        "Relatórios operacionais são recalculados apenas à meia-noite, mas a equipe de fraude precisa reagir em poucos segundos.",
+        "Um pipeline em streaming 24x7 foi criado para uma consolidação financeira que só é utilizada uma vez por dia.",
+        "Dashboards de operação precisam de dados em minutos, enquanto fechamento contábil aceita dados consolidados no dia seguinte.",
+        "O mesmo pipeline tenta atender alertas em tempo real e agregações históricas pesadas, causando custo e complexidade excessivos."
+      ]
+    },
+    "oltp_vs_olap": {
+      "title": "OLTP vs OLAP",
+      "bottleneck": "Consultas analíticas pesadas competindo com transações operacionais.",
+      "pattern": "Separação de workloads OLTP e OLAP com replicação ou pipelines de dados entre os ambientes.",
+      "root": "O banco transacional está sendo usado simultaneamente para escrita de baixa latência e análises agregadas de grande varredura.",
+      "solution": "Manter o sistema operacional em um banco OLTP e alimentar uma camada analítica apropriada por CDC, ETL ou ELT.",
+      "techs": [
+        "PostgreSQL",
+        "Debezium",
+        "BigQuery",
+        "Snowflake",
+        "ClickHouse"
+      ],
+      "advantages": [
+        "isolamento de carga",
+        "latência transacional previsível",
+        "analytics escalável",
+        "modelagem adequada por workload"
+      ],
+      "tradeoffs": [
+        "duplicação de dados",
+        "atraso de sincronização",
+        "governança",
+        "custo de duas plataformas"
+      ],
+      "b_terms": [
+        "oltp",
+        "consultas analíticas",
+        "contenção"
+      ],
+      "p_terms": [
+        "olap",
+        "separação",
+        "cdc"
+      ],
+      "must": [
+        "OLTP",
+        "OLAP",
+        "isolamento",
+        "CDC"
+      ],
+      "forbidden": [
+        "oltp e olap são equivalentes"
+      ],
+      "stems": [
+        "Consultas de BI com joins e agregações varrem milhões de linhas no mesmo PostgreSQL que processa pedidos.",
+        "O fechamento mensal degrada drasticamente a API de checkout porque ambos usam o mesmo banco.",
+        "Analistas recebem acesso direto ao banco de produção para montar dashboards e relatórios ad hoc.",
+        "A aplicação transacional precisa manter resposta abaixo de 100 ms, mas cargas analíticas longas bloqueiam recursos."
+      ]
+    },
+    "queues_vs_logs": {
+      "title": "Filas tradicionais vs logs distribuídos",
+      "bottleneck": "Uso de uma fila de consumo destrutivo para um caso que exige retenção, replay e múltiplos consumidores independentes, ou o inverso.",
+      "pattern": "Escolha entre queue e distributed log baseada na semântica de consumo.",
+      "root": "A tecnologia de mensageria foi escolhida sem considerar retenção, fan-out, replay e independência de offsets.",
+      "solution": "Usar fila tradicional para distribuição de trabalho quando uma mensagem deve ser processada por um trabalhador; usar log distribuído para eventos persistidos consumidos por grupos independentes.",
+      "techs": [
+        "RabbitMQ",
+        "Amazon SQS",
+        "Apache Kafka",
+        "Redpanda"
+      ],
+      "advantages": [
+        "semântica adequada",
+        "menor acoplamento",
+        "replay quando necessário",
+        "processamento de trabalho simples quando apropriado"
+      ],
+      "tradeoffs": [
+        "diferenças operacionais",
+        "ordenação",
+        "retenção",
+        "gestão de offsets ou acknowledgements"
+      ],
+      "b_terms": [
+        "fila",
+        "replay",
+        "consumo destrutivo"
+      ],
+      "p_terms": [
+        "log distribuído",
+        "queue",
+        "fila"
+      ],
+      "must": [
+        "fila",
+        "log distribuído",
+        "replay",
+        "consumer"
+      ],
+      "forbidden": [
+        "rabbitmq mantém replay ilimitado por padrão"
+      ],
+      "stems": [
+        "Uma fila apaga mensagens após ACK, mas auditoria precisa reproduzir todo o histórico para um novo consumidor.",
+        "Um sistema de jobs precisa garantir que cada tarefa seja executada por apenas um worker, mas foi modelado como stream compartilhado.",
+        "Cinco departamentos precisam ler os mesmos eventos em ritmos diferentes sem competir pelas mensagens.",
+        "Mensagens representam comandos de trabalho pontuais, mas a equipe mantém retenção longa e offsets complexos sem necessidade."
+      ]
+    },
+    "n_to_m_integrations": {
+      "title": "N×M integrations",
+      "bottleneck": "Topologia N×M com alto acoplamento e crescimento combinatório das integrações.",
+      "pattern": "Arquitetura orientada a eventos ou camada de integração desacoplada.",
+      "root": "Cada produtor conhece diretamente vários consumidores e cada nova integração cria novos contratos e deploys coordenados.",
+      "solution": "Substituir conexões ponto a ponto por um canal compartilhado de eventos ou integração, com contratos versionados e consumidores independentes.",
+      "techs": [
+        "Apache Kafka",
+        "Redpanda",
+        "Apache Pulsar",
+        "Schema Registry"
+      ],
+      "advantages": [
+        "redução de acoplamento",
+        "menor número de integrações",
+        "onboarding de consumidores",
+        "evolução independente"
+      ],
+      "tradeoffs": [
+        "governança central",
+        "eventual consistency",
+        "observabilidade distribuída",
+        "migração incremental"
+      ],
+      "b_terms": [
+        "n×m",
+        "n x m",
+        "ponto a ponto",
+        "acoplamento"
+      ],
+      "p_terms": [
+        "event-driven",
+        "orientada a eventos",
+        "event streaming"
+      ],
+      "must": [
+        "desacoplamento",
+        "producer",
+        "consumer",
+        "contrato"
+      ],
+      "forbidden": [
+        "adicionar mais integrações ponto a ponto resolve a escalabilidade"
+      ],
+      "stems": [
+        "Cada sistema produtor chama APIs distintas para cada consumidor e a matriz de integrações cresce a cada novo produto.",
+        "Uma mudança no payload de um produtor exige coordenação de deploy com vários times consumidores.",
+        "A empresa mantém dezenas de conectores customizados entre sistemas internos, com lógica duplicada e difícil rastreabilidade.",
+        "Adicionar um novo consumidor demanda alterar configurações e código em quase todos os produtores existentes."
+      ]
+    },
+    "cdc": {
+      "title": "Change Data Capture",
+      "bottleneck": "Sincronização de dados baseada em scans, polling ou cargas completas que aumenta latência e carga no banco de origem.",
+      "pattern": "Change Data Capture baseado em log de transações.",
+      "root": "Mudanças do banco são descobertas por consultas periódicas ou extrações completas em vez de capturadas incrementalmente.",
+      "solution": "Capturar inserts, updates e deletes a partir do transaction log e publicar eventos de mudança para destinos analíticos ou serviços consumidores.",
+      "techs": [
+        "Debezium",
+        "Kafka Connect",
+        "AWS DMS",
+        "PostgreSQL logical replication"
+      ],
+      "advantages": [
+        "baixa latência",
+        "menor carga no banco",
+        "incrementalidade",
+        "propagação de deletes"
+      ],
+      "tradeoffs": [
+        "ordenação",
+        "schema evolution",
+        "snapshots iniciais",
+        "gestão do log e offsets"
+      ],
+      "b_terms": [
+        "polling",
+        "scan",
+        "carga completa",
+        "sincronização"
+      ],
+      "p_terms": [
+        "cdc",
+        "change data capture",
+        "transaction log"
+      ],
+      "must": [
+        "CDC",
+        "transaction log",
+        "incremental",
+        "offset"
+      ],
+      "forbidden": [
+        "cdc exige consultar todas as tabelas a cada ciclo"
+      ],
+      "stems": [
+        "A cada cinco minutos um job executa SELECT completo em tabelas grandes para descobrir alterações.",
+        "O data warehouse é recarregado integralmente porque a equipe não consegue identificar apenas registros alterados.",
+        "Deletes feitos no sistema transacional não chegam corretamente à camada analítica por um pipeline baseado apenas em updated_at.",
+        "A aplicação precisa propagar mudanças quase em tempo real sem adicionar triggers pesadas ao banco."
+      ]
+    },
+    "consumer_lag": {
+      "title": "Consumer lag",
+      "bottleneck": "Consumer lag crescente: consumidores processam eventos mais lentamente do que os produtores publicam.",
+      "pattern": "Escala de consumidores, particionamento suficiente, backpressure e observabilidade de lag.",
+      "root": "Taxa de consumo, paralelismo ou desempenho por mensagem é inferior à taxa de entrada.",
+      "solution": "Medir lag por partição, identificar gargalos de processamento e aumentar paralelismo até o limite de partições, otimizando I/O e processamento antes de simplesmente escalar.",
+      "techs": [
+        "Apache Kafka",
+        "Kafka consumer groups",
+        "Prometheus",
+        "Grafana"
+      ],
+      "advantages": [
+        "recuperação de atraso",
+        "SLA observável",
+        "uso eficiente de consumidores",
+        "diagnóstico por partição"
+      ],
+      "tradeoffs": [
+        "mais consumidores não ajudam além do número de partições",
+        "custos",
+        "rebalancing",
+        "hot partitions"
+      ],
+      "b_terms": [
+        "consumer lag",
+        "lag",
+        "atraso"
+      ],
+      "p_terms": [
+        "consumer group",
+        "particionamento",
+        "backpressure"
+      ],
+      "must": [
+        "lag",
+        "partição",
+        "consumer group",
+        "throughput"
+      ],
+      "forbidden": [
+        "adicionar consumidores sempre aumenta throughput sem limite"
+      ],
+      "stems": [
+        "O lag de um consumer group cresce continuamente nos horários de pico e demora horas para voltar a zero.",
+        "Há vinte consumidores para um tópico com quatro partições e a equipe espera que todos processem em paralelo.",
+        "Uma única partição acumula muito mais backlog do que as demais porque uma chave concentra a maioria dos eventos.",
+        "O consumidor faz uma chamada HTTP lenta por evento e não acompanha a taxa de produção."
+      ]
+    },
+    "partitioning": {
+      "title": "Particionamento",
+      "bottleneck": "Distribuição inadequada de dados ou chave de partição que cria hot partitions e limita paralelismo.",
+      "pattern": "Estratégia de particionamento alinhada à cardinalidade, ordenação e padrão de acesso.",
+      "root": "A chave de partição concentra tráfego ou o número de partições não suporta a concorrência necessária.",
+      "solution": "Escolher chave de alta cardinalidade coerente com o requisito de ordenação, medir skew e dimensionar partições considerando throughput e grupos de consumidores.",
+      "techs": [
+        "Apache Kafka",
+        "Spark",
+        "Flink",
+        "consistent hashing"
+      ],
+      "advantages": [
+        "paralelismo",
+        "distribuição de carga",
+        "ordenação localizada",
+        "escala horizontal"
+      ],
+      "tradeoffs": [
+        "ordenação global não garantida",
+        "reparticionamento",
+        "mais metadados",
+        "skew de chaves"
+      ],
+      "b_terms": [
+        "hot partition",
+        "partição",
+        "skew"
+      ],
+      "p_terms": [
+        "particionamento",
+        "chave",
+        "hash"
+      ],
+      "must": [
+        "partição",
+        "chave",
+        "cardinalidade",
+        "ordenação"
+      ],
+      "forbidden": [
+        "mais partições garantem ordenação global"
+      ],
+      "stems": [
+        "Todos os eventos usam country como chave e 80% do tráfego pertence a um único país.",
+        "A equipe precisa preservar ordem por cliente, mas atualmente particiona os eventos aleatoriamente.",
+        "Um tópico tem menos partições do que o paralelismo necessário para atingir o throughput do SLA.",
+        "Uma chave baseada em timestamp arredondado agrupa grande volume de eventos na mesma partição."
+      ]
+    },
+    "scalability": {
+      "title": "Escalabilidade",
+      "bottleneck": "Componente central ou processamento vertical limita crescimento de throughput.",
+      "pattern": "Escala horizontal com particionamento, serviços stateless quando possível e remoção de single points of contention.",
+      "root": "A arquitetura depende de um único nó, lock, banco ou worker para processar todo o volume.",
+      "solution": "Identificar o recurso saturado, particionar a carga e permitir múltiplas instâncias independentes, preservando estado somente onde necessário.",
+      "techs": [
+        "Kafka",
+        "Kubernetes",
+        "Spark",
+        "Flink",
+        "Redis"
+      ],
+      "advantages": [
+        "crescimento incremental",
+        "resiliência",
+        "elasticidade",
+        "isolamento de carga"
+      ],
+      "tradeoffs": [
+        "coordenação distribuída",
+        "consistência",
+        "custo",
+        "observabilidade"
+      ],
+      "b_terms": [
+        "single point",
+        "vertical",
+        "saturado",
+        "gargalo"
+      ],
+      "p_terms": [
+        "escala horizontal",
+        "particionamento",
+        "sharding"
+      ],
+      "must": [
+        "escala horizontal",
+        "particionamento",
+        "throughput",
+        "estado"
+      ],
+      "forbidden": [
+        "scale up infinito"
+      ],
+      "stems": [
+        "Um único processo agrega todos os eventos da empresa e já utiliza 95% de CPU.",
+        "A solução só cresce aumentando CPU e RAM de uma VM central, que atingiu o limite do provedor.",
+        "Todas as requisições dependem de um lock global para atualizar um contador compartilhado.",
+        "Novos clientes aumentam linearmente a fila em um worker único responsável por transformação."
+      ]
+    },
+    "retention": {
+      "title": "Retenção",
+      "bottleneck": "Política de retenção não alinhada a replay, auditoria, custo e requisitos regulatórios.",
+      "pattern": "Retenção por camada e finalidade, com lifecycle e armazenamento de longo prazo quando necessário.",
+      "root": "Todos os dados são mantidos pelo mesmo período sem classificar valor operacional, auditoria e custo.",
+      "solution": "Definir janela de replay por tópico ou dataset, aplicar retenção curta no hot path e arquivamento durável para histórico quando exigido.",
+      "techs": [
+        "Kafka retention policies",
+        "S3/Object Storage",
+        "Apache Iceberg",
+        "lifecycle policies"
+      ],
+      "advantages": [
+        "custo previsível",
+        "replay controlado",
+        "compliance",
+        "gestão de capacidade"
+      ],
+      "tradeoffs": [
+        "dados arquivados têm maior latência",
+        "governança",
+        "restauração",
+        "complexidade de lifecycle"
+      ],
+      "b_terms": [
+        "retenção",
+        "storage",
+        "histórico"
+      ],
+      "p_terms": [
+        "lifecycle",
+        "arquivamento",
+        "retention"
+      ],
+      "must": [
+        "retenção",
+        "replay",
+        "custo",
+        "arquivamento"
+      ],
+      "forbidden": [
+        "reter tudo para sempre não tem custo"
+      ],
+      "stems": [
+        "O cluster mantém todos os eventos indefinidamente e o armazenamento cresce sem controle.",
+        "Eventos necessários para auditoria por sete anos são apagados após sete dias por uma política global.",
+        "A equipe precisa de replay de 48 horas, mas paga storage premium para manter vários anos no broker.",
+        "Datasets de uso operacional e histórico seguem a mesma política de retenção apesar de SLAs diferentes."
+      ]
+    },
+    "replay": {
+      "title": "Replay de eventos",
+      "bottleneck": "Arquitetura não permite reprocessar eventos de forma segura, reproduzível e idempotente.",
+      "pattern": "Log imutável com offsets ou checkpoints e consumidores idempotentes.",
+      "root": "Mensagens são destruídas após consumo ou consumidores possuem efeitos colaterais não idempotentes.",
+      "solution": "Manter eventos por uma janela adequada, versionar lógica de processamento e permitir reset controlado de offsets/checkpoints com idempotência nos sinks.",
+      "techs": [
+        "Apache Kafka",
+        "Flink checkpoints",
+        "idempotency keys",
+        "object storage"
+      ],
+      "advantages": [
+        "backfill",
+        "recuperação de bugs",
+        "novos consumidores",
+        "auditoria"
+      ],
+      "tradeoffs": [
+        "efeitos duplicados",
+        "custo de retenção",
+        "compatibilidade histórica de schemas",
+        "controle operacional"
+      ],
+      "b_terms": [
+        "replay",
+        "reprocessamento",
+        "idempotência"
+      ],
+      "p_terms": [
+        "offset",
+        "checkpoint",
+        "log imutável"
+      ],
+      "must": [
+        "replay",
+        "offset",
+        "idempotência",
+        "retenção"
+      ],
+      "forbidden": [
+        "replay nunca pode gerar duplicidade"
+      ],
+      "stems": [
+        "Após corrigir um bug, a equipe precisa recalcular seis horas de eventos, mas as mensagens já foram removidas.",
+        "Resetar offsets duplica cobranças porque o consumidor executa efeitos colaterais sem chave de idempotência.",
+        "Um novo modelo precisa ser aplicado ao histórico completo de eventos para gerar novas features.",
+        "A equipe quer reconstruir uma materialized view a partir do histórico sem consultar o banco operacional."
+      ]
+    },
+    "schemas": {
+      "title": "Schemas e evolução",
+      "bottleneck": "Mudanças de schema quebram consumidores ou produzem contratos ambíguos.",
+      "pattern": "Schema governance com compatibilidade, versionamento e contratos explícitos.",
+      "root": "Produtores alteram payloads sem regras de compatibilidade nem validação central.",
+      "solution": "Adotar schemas versionados, política de compatibilidade apropriada e CI para validar mudanças antes do deploy.",
+      "techs": [
+        "Schema Registry",
+        "Avro",
+        "Protobuf",
+        "JSON Schema",
+        "contract testing"
+      ],
+      "advantages": [
+        "evolução segura",
+        "contratos claros",
+        "detecção antecipada",
+        "interoperabilidade"
+      ],
+      "tradeoffs": [
+        "governança",
+        "disciplina de versionamento",
+        "migração de formatos",
+        "compatibilidade limitada pela regra escolhida"
+      ],
+      "b_terms": [
+        "schema",
+        "compatibilidade",
+        "contrato"
+      ],
+      "p_terms": [
+        "schema registry",
+        "versionamento",
+        "compatibilidade"
+      ],
+      "must": [
+        "schema",
+        "compatibilidade",
+        "versionamento",
+        "consumer"
+      ],
+      "forbidden": [
+        "remover campo obrigatório é sempre backward compatible"
+      ],
+      "stems": [
+        "Um produtor removeu um campo obrigatório e consumidores antigos começaram a falhar após o deploy.",
+        "Times publicam JSON livre com nomes de campos inconsistentes e nenhuma validação de contrato.",
+        "É necessário adicionar novos campos sem interromper consumidores que atualizam em ritmos diferentes.",
+        "Eventos históricos precisam continuar legíveis mesmo após várias versões do payload."
+      ]
+    },
+    "data_lake": {
+      "title": "Data lake",
+      "bottleneck": "Dados brutos e heterogêneos precisam de armazenamento econômico e escalável, mas estão presos em sistemas caros ou pouco flexíveis.",
+      "pattern": "Data lake em object storage com camadas e governança de metadados.",
+      "root": "A plataforma tenta armazenar dados de múltiplos formatos em sistemas estruturados caros ou sem estratégia de organização.",
+      "solution": "Centralizar dados brutos e processados em object storage, separar zonas de ingestão e curadoria e adicionar catálogo, segurança e formatos colunares.",
+      "techs": [
+        "Amazon S3",
+        "Azure Data Lake Storage",
+        "Google Cloud Storage",
+        "Parquet",
+        "Glue Catalog"
+      ],
+      "advantages": [
+        "baixo custo por TB",
+        "flexibilidade",
+        "separação storage/compute",
+        "retenção de dados brutos"
+      ],
+      "tradeoffs": [
+        "risco de data swamp",
+        "governança",
+        "qualidade",
+        "latência de consulta"
+      ],
+      "b_terms": [
+        "armazenamento",
+        "dados brutos",
+        "custo"
+      ],
+      "p_terms": [
+        "data lake",
+        "object storage",
+        "parquet"
+      ],
+      "must": [
+        "data lake",
+        "object storage",
+        "catálogo",
+        "Parquet"
+      ],
+      "forbidden": [
+        "data lake dispensa governança"
+      ],
+      "stems": [
+        "Logs, imagens, JSON e CSV crescem rapidamente e estão sendo mantidos em um banco relacional caro.",
+        "Cada equipe mantém cópias próprias de arquivos sem catálogo, lineage ou padrão de armazenamento.",
+        "A empresa precisa preservar dados brutos por anos para ciência de dados e reprocessamento.",
+        "Volumes históricos aumentam, mas o custo de storage acoplado ao warehouse cresce mais rápido que o uso."
+      ]
+    },
+    "data_warehouse": {
+      "title": "Data warehouse",
+      "bottleneck": "Analytics corporativo carece de dados integrados, modelados e consistentes para BI.",
+      "pattern": "Data warehouse governado com modelagem dimensional ou camada semântica.",
+      "root": "Relatórios consultam fontes operacionais heterogêneas e aplicam regras de negócio diferentes.",
+      "solution": "Consolidar dados curados em um warehouse, padronizar métricas e modelar fatos e dimensões ou uma camada semântica conforme o caso.",
+      "techs": [
+        "Snowflake",
+        "BigQuery",
+        "Amazon Redshift",
+        "dbt"
+      ],
+      "advantages": [
+        "métricas consistentes",
+        "performance analítica",
+        "governança",
+        "self-service BI"
+      ],
+      "tradeoffs": [
+        "custo",
+        "latência de carga",
+        "modelagem",
+        "duplicação de dados"
+      ],
+      "b_terms": [
+        "métricas inconsistentes",
+        "bi",
+        "analítico"
+      ],
+      "p_terms": [
+        "data warehouse",
+        "modelagem dimensional",
+        "camada semântica"
+      ],
+      "must": [
+        "warehouse",
+        "fatos",
+        "dimensões",
+        "governança"
+      ],
+      "forbidden": [
+        "warehouse é ideal para transações oltp de alta frequência"
+      ],
+      "stems": [
+        "Financeiro e vendas calculam receita de formas diferentes porque cada dashboard consulta fontes distintas.",
+        "Dashboards fazem joins diretamente em vários bancos operacionais e apresentam performance imprevisível.",
+        "Executivos precisam de métricas certificadas e histórico consistente para decisões mensais.",
+        "A equipe de BI recria transformações complexas em cada ferramenta de visualização."
+      ]
+    },
+    "lakehouse": {
+      "title": "Lakehouse",
+      "bottleneck": "Separação rígida entre lake e warehouse gera cópias, pipelines duplicados e dificuldade de garantir transações e qualidade sobre object storage.",
+      "pattern": "Lakehouse com formato de tabela transacional sobre object storage.",
+      "root": "Dados passam por múltiplas cópias entre lake e warehouse para obter flexibilidade e recursos analíticos.",
+      "solution": "Adotar formato de tabela como Iceberg, Delta ou Hudi sobre object storage, com catálogo e motores compatíveis, quando isso reduzir duplicação e atender workloads.",
+      "techs": [
+        "Apache Iceberg",
+        "Delta Lake",
+        "Apache Hudi",
+        "Spark",
+        "Trino"
+      ],
+      "advantages": [
+        "separação storage/compute",
+        "ACID no lake",
+        "menos cópias",
+        "múltiplos motores"
+      ],
+      "tradeoffs": [
+        "complexidade de catálogo",
+        "compatibilidade entre engines",
+        "compaction",
+        "não substitui automaticamente todo warehouse"
+      ],
+      "b_terms": [
+        "cópias",
+        "lake",
+        "warehouse"
+      ],
+      "p_terms": [
+        "lakehouse",
+        "iceberg",
+        "delta"
+      ],
+      "must": [
+        "lakehouse",
+        "ACID",
+        "object storage",
+        "catálogo"
+      ],
+      "forbidden": [
+        "lakehouse elimina qualquer necessidade de warehouse"
+      ],
+      "stems": [
+        "Dados são copiados do lake para um warehouse apenas para receber garantias transacionais e consultas SQL confiáveis.",
+        "Vários motores precisam ler e escrever as mesmas tabelas no object storage mantendo snapshots consistentes.",
+        "Pipelines duplicam datasets entre camadas analíticas e aumentam custo e tempo de atualização.",
+        "A equipe quer time travel e evolução de schema em tabelas grandes armazenadas no data lake."
+      ]
+    },
+    "etl_vs_elt": {
+      "title": "ETL vs ELT",
+      "bottleneck": "Transformações ocorrem no local inadequado, limitando escalabilidade, governança ou capacidade de reprocessamento.",
+      "pattern": "Escolha consciente entre ETL e ELT conforme capacidade do destino, sensibilidade dos dados e necessidade de preservar o raw.",
+      "root": "O pipeline aplica transformações pesadas antes da carga ou carrega dados sem controles, sem considerar recursos do destino.",
+      "solution": "Usar ELT quando o destino analítico consegue escalar transformações e preservar raw é valioso; usar ETL quando dados precisam ser filtrados ou mascarados antes de chegar ao destino.",
+      "techs": [
+        "dbt",
+        "Apache Spark",
+        "Airflow",
+        "Snowflake",
+        "BigQuery"
+      ],
+      "advantages": [
+        "reprocessamento",
+        "separação de responsabilidades",
+        "uso do compute adequado",
+        "governança"
+      ],
+      "tradeoffs": [
+        "custo de compute",
+        "dados sensíveis no raw",
+        "orquestração",
+        "duplicação"
+      ],
+      "b_terms": [
+        "etl",
+        "elt",
+        "transformação"
+      ],
+      "p_terms": [
+        "etl",
+        "elt",
+        "dbt"
+      ],
+      "must": [
+        "ETL",
+        "ELT",
+        "transformação",
+        "raw"
+      ],
+      "forbidden": [
+        "elt é sempre superior a etl"
+      ],
+      "stems": [
+        "Um servidor intermediário transforma terabytes antes de carregar no warehouse e virou gargalo de CPU.",
+        "Dados pessoais sensíveis são carregados brutos no destino apesar de uma política que exige mascaramento prévio.",
+        "A equipe não consegue refazer transformações sem extrair novamente dados da origem porque nenhum raw é preservado.",
+        "O warehouse possui compute elástico, mas transformações continuam presas a um pequeno servidor ETL."
+      ]
+    },
+    "availability": {
+      "title": "Disponibilidade",
+      "bottleneck": "Single point of failure ou ausência de estratégia explícita de failover e recuperação.",
+      "pattern": "Alta disponibilidade com redundância, health checks, failover e definição de RTO/RPO.",
+      "root": "Componentes críticos possuem instância única ou replicação sem mecanismo testado de promoção e recuperação.",
+      "solution": "Definir RTO e RPO, remover pontos únicos de falha, distribuir réplicas entre domínios de falha e testar failover regularmente.",
+      "techs": [
+        "Kafka replication",
+        "Kubernetes",
+        "PostgreSQL replication",
+        "multi-AZ"
+      ],
+      "advantages": [
+        "menor indisponibilidade",
+        "recuperação previsível",
+        "resiliência",
+        "testabilidade"
+      ],
+      "tradeoffs": [
+        "custo de redundância",
+        "complexidade",
+        "consistência durante falhas",
+        "operações de failover"
+      ],
+      "b_terms": [
+        "single point of failure",
+        "indisponibilidade",
+        "failover"
+      ],
+      "p_terms": [
+        "alta disponibilidade",
+        "redundância",
+        "multi-az"
+      ],
+      "must": [
+        "RTO",
+        "RPO",
+        "replicação",
+        "failover"
+      ],
+      "forbidden": [
+        "replicação elimina necessidade de backup"
+      ],
+      "stems": [
+        "Todo pipeline depende de um único broker e qualquer manutenção interrompe a ingestão.",
+        "Há réplicas do banco, mas a promoção nunca foi testada e não existe RTO definido.",
+        "Todas as réplicas de um serviço crítico estão na mesma zona de disponibilidade.",
+        "A aplicação recupera após falhas, mas perde horas de dados porque RPO não foi definido nem medido."
+      ]
+    },
+    "replication": {
+      "title": "Replicação",
+      "bottleneck": "Fator ou topologia de replicação inadequados para durabilidade, leitura e recuperação.",
+      "pattern": "Replicação coerente com fault domains, consistência e objetivos de recuperação.",
+      "root": "Réplicas existem sem considerar zonas de falha, quorum, atraso e comportamento de leitura ou escrita.",
+      "solution": "Definir fator de replicação, distribuir cópias por domínios de falha e monitorar replica lag e quorum conforme o sistema.",
+      "techs": [
+        "Apache Kafka",
+        "PostgreSQL streaming replication",
+        "Cassandra",
+        "multi-AZ storage"
+      ],
+      "advantages": [
+        "durabilidade",
+        "failover",
+        "disponibilidade",
+        "opções de leitura"
+      ],
+      "tradeoffs": [
+        "storage adicional",
+        "latência de confirmação",
+        "stale reads",
+        "complexidade de quorum"
+      ],
+      "b_terms": [
+        "replicação",
+        "réplica",
+        "durabilidade"
+      ],
+      "p_terms": [
+        "quorum",
+        "replication factor",
+        "multi-az"
+      ],
+      "must": [
+        "replicação",
+        "quorum",
+        "lag",
+        "fault domain"
+      ],
+      "forbidden": [
+        "uma réplica no mesmo host protege contra falha do host"
+      ],
+      "stems": [
+        "Um tópico crítico usa replication factor 1 e a perda de um broker torna partições indisponíveis.",
+        "Réplicas do banco ficam atrasadas e relatórios leem dados antigos sem saber o replica lag.",
+        "Três réplicas estão no mesmo rack físico, portanto uma falha de energia remove todas de uma vez.",
+        "A equipe aumentou réplicas sem revisar quorum e percebeu aumento de latência de escrita."
+      ]
+    },
+    "distributed_processing": {
+      "title": "Processamento distribuído",
+      "bottleneck": "Processamento de grande volume concentrado em uma única máquina ou job com shuffle e skew mal dimensionados.",
+      "pattern": "Processamento distribuído com particionamento, paralelismo e minimização de shuffle.",
+      "root": "O workload não distribui dados e computação de forma equilibrada ou executa operações globais caras.",
+      "solution": "Particionar o dataset, distribuir tarefas, reduzir shuffles desnecessários e tratar skew; escolher engine conforme batch ou streaming.",
+      "techs": [
+        "Apache Spark",
+        "Apache Flink",
+        "Databricks",
+        "Kubernetes"
+      ],
+      "advantages": [
+        "paralelismo",
+        "escala horizontal",
+        "tolerância a falhas",
+        "processamento de grandes volumes"
+      ],
+      "tradeoffs": [
+        "shuffle",
+        "serialização",
+        "skew",
+        "coordenação e custo"
+      ],
+      "b_terms": [
+        "shuffle",
+        "skew",
+        "single node",
+        "processamento"
+      ],
+      "p_terms": [
+        "spark",
+        "flink",
+        "processamento distribuído"
+      ],
+      "must": [
+        "particionamento",
+        "shuffle",
+        "paralelismo",
+        "skew"
+      ],
+      "forbidden": [
+        "mais executores sempre resolvem data skew"
+      ],
+      "stems": [
+        "Um job de transformação de vários terabytes executa em uma única VM e ultrapassa a janela noturna.",
+        "Um join distribuído gera shuffle massivo e spill em disco porque as tabelas são reparticionadas de forma inadequada.",
+        "Uma chave muito frequente concentra quase todos os registros em uma única task do Spark.",
+        "O cluster tem muitos executores ociosos porque o job foi criado com poucas partições de entrada."
+      ]
+    },
+    "consistency_tradeoffs": {
+      "title": "Consistência e trade-offs",
+      "bottleneck": "Requisito de consistência não definido, levando a coordenação excessiva ou dados temporariamente divergentes sem tratamento.",
+      "pattern": "Modelo de consistência explícito por domínio, com idempotência, versionamento e reconciliação quando necessário.",
+      "root": "A arquitetura assume simultaneamente disponibilidade, baixa latência e consistência forte em cenários onde existem falhas e partições de rede.",
+      "solution": "Classificar operações que exigem consistência forte e as que toleram consistência eventual; projetar compensação, idempotência e leitura apropriada.",
+      "techs": [
+        "PostgreSQL",
+        "Apache Kafka",
+        "Cassandra",
+        "sagas",
+        "outbox pattern"
+      ],
+      "advantages": [
+        "trade-offs explícitos",
+        "melhor disponibilidade",
+        "controle de integridade",
+        "decisões por domínio"
+      ],
+      "tradeoffs": [
+        "complexidade de negócio",
+        "reconciliação",
+        "latência",
+        "possível stale data"
+      ],
+      "b_terms": [
+        "consistência",
+        "divergência",
+        "coordenação"
+      ],
+      "p_terms": [
+        "consistência eventual",
+        "consistência forte",
+        "saga"
+      ],
+      "must": [
+        "consistência",
+        "disponibilidade",
+        "idempotência",
+        "trade-off"
+      ],
+      "forbidden": [
+        "cap diz que só dois atributos podem existir em qualquer situação"
+      ],
+      "stems": [
+        "O catálogo pode tolerar segundos de atraso, mas o saldo financeiro não pode permitir dupla atualização concorrente.",
+        "Durante partições de rede, duas regiões aceitam alterações conflitantes e não existe estratégia de reconciliação.",
+        "Cada microserviço participa de uma transação distribuída síncrona e a disponibilidade cai quando qualquer serviço falha.",
+        "Eventos podem chegar duplicados ou fora de ordem e consumidores atualizam estado sem versionamento nem idempotência."
+      ]
+    }
+  },
+  "contexts": [
+    {
+      "industry": "fintech",
+      "scale": "18 serviços e cerca de 12 milhões de eventos por dia",
+      "constraint": "SLA operacional de poucos segundos e auditoria regulatória"
+    },
+    {
+      "industry": "varejo omnichannel",
+      "scale": "45 lojas, e-commerce e 6 centros de distribuição",
+      "constraint": "picos de Black Friday e necessidade de rastreabilidade"
+    },
+    {
+      "industry": "healthtech",
+      "scale": "9 sistemas clínicos e 3 data centers",
+      "constraint": "dados sensíveis e exigência de alta disponibilidade"
+    },
+    {
+      "industry": "marketplace",
+      "scale": "2 milhões de usuários ativos e centenas de milhares de pedidos por dia",
+      "constraint": "crescimento rápido sem janela longa de manutenção"
+    },
+    {
+      "industry": "logística",
+      "scale": "70 mil entregas diárias e telemetria contínua",
+      "constraint": "eventos chegam fora de ordem e há links de rede instáveis"
+    },
+    {
+      "industry": "edtech",
+      "scale": "400 escolas e dezenas de milhões de interações mensais",
+      "constraint": "custo de infraestrutura precisa permanecer previsível"
+    },
+    {
+      "industry": "banco digital",
+      "scale": "25 microsserviços transacionais",
+      "constraint": "operações financeiras exigem rastreabilidade e baixa latência"
+    },
+    {
+      "industry": "streaming de mídia",
+      "scale": "centenas de milhares de eventos de playback por segundo em picos",
+      "constraint": "analytics quase em tempo real e grande volume histórico"
+    },
+    {
+      "industry": "indústria",
+      "scale": "12 fábricas com sensores e sistemas legados",
+      "constraint": "algumas plantas ficam temporariamente desconectadas"
+    },
+    {
+      "industry": "SaaS B2B",
+      "scale": "3 mil clientes e workloads multi-tenant",
+      "constraint": "isolamento entre clientes e crescimento horizontal"
+    },
+    {
+      "industry": "seguradora",
+      "scale": "30 sistemas de apólice, sinistro e atendimento",
+      "constraint": "auditoria e retenção longa"
+    },
+    {
+      "industry": "telecom",
+      "scale": "bilhões de registros de uso por mês",
+      "constraint": "alto throughput e janelas de processamento limitadas"
+    },
+    {
+      "industry": "mobilidade urbana",
+      "scale": "eventos contínuos de corridas, motoristas e localização",
+      "constraint": "detecção de incidentes em minutos"
+    },
+    {
+      "industry": "e-commerce internacional",
+      "scale": "operações em 6 regiões",
+      "constraint": "latência regional e requisitos de consistência distintos"
+    },
+    {
+      "industry": "energia",
+      "scale": "milhões de leituras de medidores por hora",
+      "constraint": "reprocessamento e reconciliação são frequentes"
+    },
+    {
+      "industry": "governo digital",
+      "scale": "integrações entre 20 órgãos e sistemas heterogêneos",
+      "constraint": "interoperabilidade e contratos estáveis"
+    },
+    {
+      "industry": "adtech",
+      "scale": "grande volume de cliques e impressões em tempo real",
+      "constraint": "latência baixa, alto skew de algumas campanhas"
+    },
+    {
+      "industry": "food delivery",
+      "scale": "pedidos, pagamentos, restaurantes e entregadores em fluxo contínuo",
+      "constraint": "picos concentrados em horários de refeição"
+    },
+    {
+      "industry": "plataforma IoT",
+      "scale": "250 mil dispositivos ativos",
+      "constraint": "mensagens duplicadas e conectividade intermitente"
+    },
+    {
+      "industry": "empresa de analytics",
+      "scale": "datasets de clientes entre gigabytes e dezenas de terabytes",
+      "constraint": "motores diferentes precisam compartilhar dados"
+    }
+  ]
+}

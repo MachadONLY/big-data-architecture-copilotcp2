@@ -1,0 +1,3 @@
+# Only for opening the interface in illustrative mode without any GPU or LLM.
+# Local Qwen inference still requires requirements.txt, compatible CUDA and trained adapters.
+streamlit==1.52.2

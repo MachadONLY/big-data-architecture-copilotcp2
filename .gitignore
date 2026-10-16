@@ -1,0 +1,40 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.env
+.DS_Store
+Thumbs.db
+
+# Large model artifacts
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+models/*
+!models/README.md
+
+# QLoRA adapters/checkpoints are generated locally and are not committed.
+experiments/**/adapter/
+experiments/**/runs/**/adapter/
+experiments/**/runs/**/checkpoints/
+outputs/
+cache/
+
+# Keep lightweight run evidence (metrics.json, environment.json, config_used.yaml, logs)
+# so it can be committed to GitHub after real execution.
+
+# Evaluation outputs are lightweight evidence and may be committed after review.
+# Do not ignore experiments/evaluation/.
+
+# Local screenshots are evidence; selected real screenshots can be committed.
+# Keep them tracked intentionally.
+
+.ipynb_checkpoints/
+
+# Regenerated delivery status; embedded in the Teams ZIP, not GitHub.
+FINAL_REPORT.md
+submission_status.json

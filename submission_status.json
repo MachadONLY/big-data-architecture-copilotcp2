@@ -1,0 +1,16 @@
+{
+  "ready": false,
+  "checks": {
+    "three_experiments": false,
+    "training_run_evidence": false,
+    "gpu_json": false,
+    "qlora_stack_nf4": false,
+    "best_adapter": false,
+    "evaluation_summary": false,
+    "gpu_training_screenshot": false,
+    "frontend_screenshot": false,
+    "environment_lock": false,
+    "team_members": false,
+    "github_pushed": false
+  }
+}
